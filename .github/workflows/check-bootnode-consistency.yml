@@ -15,10 +15,16 @@ jobs:
 
     - name: Check bootnode consistency
       run: |
-        set +e
-
         cl_bootnodes=$(cat metadata/bootstrap_nodes.yaml | yq ".[]")
         el_bootnodes=$(cat metadata/enodes.yaml | yq ".[]")
+
+        echo "cl bootnodes ($(echo "$cl_bootnodes" | wc -l)):"
+        echo "$cl_bootnodes"
+        echo ""
+
+        echo "el bootnodes ($(echo "$el_bootnodes" | wc -l)):"
+        echo "$el_bootnodes"
+        echo ""
 
         # check duplicate cl bootnodes
         cl_duplicates=$(echo "$cl_bootnodes" | sort | uniq -d)
