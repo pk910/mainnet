@@ -1,0 +1,53 @@
+
+name: Check bootnode consistency
+
+on:
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  check_consistency:
+    name: Run bootnode consistency checks
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check bootnode consistency
+      run: |
+        set -e
+
+        cl_bootnodes=$(cat metadata/bootstrap_nodes.yaml | yq ".[]")
+        el_bootnodes=$(cat metadata/enodes.yaml | yq ".[]")
+
+        # check duplicate cl bootnodes
+        cl_duplicates=$(echo "$cl_bootnodes" | sort | uniq -d)
+        while read duplicate; do
+            echo "duplicate cl bootnode: $duplicate"
+            exit 1
+        done <<< "$cl_duplicates"
+
+        # check duplicate el bootnodes
+        el_duplicates=$(echo "$el_bootnodes" | sort | uniq -d)
+        while read duplicate; do
+            echo "duplicate el bootnode: $duplicate"
+            exit 1
+        done <<< "$el_duplicates"
+
+        # check if bootnodes in besu.json match the bootnodes in metadata/enodes.yaml
+        besu_bootnodes=$(cat metadata/besu.json | jq -r ".config.discovery.bootnodes[]")
+        besu_bootnodes_diff=$(diff <(echo "$el_bootnodes") <(echo "$besu_bootnodes"))
+        if [ -n "$besu_bootnodes_diff" ]; then
+            echo "bootnodes in metadata/besu.json do not match the bootnodes in metadata/enodes.yaml"
+            echo "$besu_bootnodes_diff"
+            exit 1
+        fi
+
+        # check if bootnodes in chainspec.json match the bootnodes in metadata/enodes.yaml
+        chainspec_bootnodes=$(cat metadata/chainspec.json | jq -r ".nodes[]")
+        chainspec_bootnodes_diff=$(diff <(echo "$el_bootnodes") <(echo "$chainspec_bootnodes"))
+        if [ -n "$chainspec_bootnodes_diff" ]; then
+            echo "bootnodes in metadata/chainspec.json do not match the bootnodes in metadata/enodes.yaml"
+            echo "$chainspec_bootnodes_diff"
+            exit 1
+        fi
