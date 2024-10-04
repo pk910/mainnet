@@ -22,22 +22,24 @@ jobs:
 
         # check duplicate cl bootnodes
         cl_duplicates=$(echo "$cl_bootnodes" | sort | uniq -d)
-        while read duplicate; do
-            echo "duplicate cl bootnode: $duplicate"
+        if [ ! -z "$cl_duplicates" ]; then
+            echo "duplicate cl bootnodes:"
+            echo "$cl_duplicates"
             exit 1
-        done <<< "$cl_duplicates"
+        fi
 
         # check duplicate el bootnodes
         el_duplicates=$(echo "$el_bootnodes" | sort | uniq -d)
-        while read duplicate; do
-            echo "duplicate el bootnode: $duplicate"
+        if [ ! -z "$el_duplicates" ]; then
+            echo "duplicate el bootnodes:"
+            echo "$el_duplicates"
             exit 1
-        done <<< "$el_duplicates"
+        fi
 
         # check if bootnodes in besu.json match the bootnodes in metadata/enodes.yaml
         besu_bootnodes=$(cat metadata/besu.json | jq -r ".config.discovery.bootnodes[]")
         besu_bootnodes_diff=$(diff <(echo "$el_bootnodes") <(echo "$besu_bootnodes"))
-        if [ -n "$besu_bootnodes_diff" ]; then
+        if [ ! -z "$besu_bootnodes_diff" ]; then
             echo "bootnodes in metadata/besu.json do not match the bootnodes in metadata/enodes.yaml"
             echo "$besu_bootnodes_diff"
             exit 1
@@ -46,7 +48,7 @@ jobs:
         # check if bootnodes in chainspec.json match the bootnodes in metadata/enodes.yaml
         chainspec_bootnodes=$(cat metadata/chainspec.json | jq -r ".nodes[]")
         chainspec_bootnodes_diff=$(diff <(echo "$el_bootnodes") <(echo "$chainspec_bootnodes"))
-        if [ -n "$chainspec_bootnodes_diff" ]; then
+        if [ ! -z "$chainspec_bootnodes_diff" ]; then
             echo "bootnodes in metadata/chainspec.json do not match the bootnodes in metadata/enodes.yaml"
             echo "$chainspec_bootnodes_diff"
             exit 1
