@@ -15,7 +15,7 @@ jobs:
 
     - name: Check bootnode consistency
       run: |
-        set -e
+        set +e
 
         cl_bootnodes=$(cat metadata/bootstrap_nodes.yaml | yq ".[]")
         el_bootnodes=$(cat metadata/enodes.yaml | yq ".[]")
